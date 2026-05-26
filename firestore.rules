@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isValidExport(data) {
+      return data.keys().hasAll(['id', 'title', 'prompt', 'videoUrl', 'userId', 'createdAt'])
+        && data.keys().size() <= 8
+        && data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() <= 256
+        && data.prompt is string && data.prompt.size() <= 2000
+        && data.videoUrl is string && data.videoUrl.size() <= 1024
+        && data.userId == request.auth.uid
+        && (data.duration == null || (data.duration is string && data.duration.size() <= 64))
+        && (data.posterUrl == null || (data.posterUrl is string && data.posterUrl.size() <= 1024));
+    }
+
+    match /exports/{exportId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(exportId) && isValidExport(incoming()) && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && isValidId(exportId) && isValidExport(incoming()) && incoming().userId == existing().userId && incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}

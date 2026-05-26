@@ -1,0 +1,6 @@
+{
+  "name": "capclip Studio",
+  "description": "A high-fidelity Creative Studio with 18 pro-grade editing tools and server-side Gemini AI for captions, backgrounds, and storyboard scripting.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
